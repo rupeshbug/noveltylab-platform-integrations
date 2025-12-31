@@ -1,4 +1,4 @@
-# platform-integrations
+# noveltylab-platform-integrations
 
 ## 1.0.0
 
