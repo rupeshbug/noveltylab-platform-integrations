@@ -1,7 +1,7 @@
 # noveltylab-platform-integrations
 
-## 1.0.0
+## 1.1.0
 
-### Major Changes
+### Minor Changes
 
-- 198fb9f: added fist add function
+- 96a6890: added function for getFacebookMessage
