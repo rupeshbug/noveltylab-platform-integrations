@@ -1,4 +1,4 @@
-# @noveltylab/platform-integrations
+# platform-integrations
 
 ## 1.0.0
 

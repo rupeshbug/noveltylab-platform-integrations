@@ -1,5 +1,5 @@
 {
-  "name": "@noveltylab/platform-integrations",
+  "name": "platform-integrations",
   "publishConfig": {
     "access": "public"
   },
