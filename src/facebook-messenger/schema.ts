@@ -96,3 +96,17 @@ export const FacebookWebhookSchema = z.object({
 });
 
 export type FacebookMessagePayload = z.infer<typeof FacebookWebhookSchema>;
+
+export const SendFacebookMessagePayload = z.object({
+  recipientId: z.string().min(1, "Recipient ID is required"),
+  message: z.string().min(1, "Message cannot be empty"),
+});
+
+export type SendFacebookMessagePayload = z.infer<
+  typeof SendFacebookMessagePayload
+>;
+
+export const FacebookAccessTokenSchema = z
+  .string()
+  .min(5, "Valid facebook access token is required")
+  .regex(/^[A-Za-z0-9-_]+$/, "Invalid Facebook access token format");

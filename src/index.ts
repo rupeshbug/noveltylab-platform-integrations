@@ -1,1 +1,1 @@
-export { getFacebookMessage } from "./facebook-messenger";
+export { FacebookMessengerSDK } from "./facebook-messenger";
