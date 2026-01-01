@@ -67,15 +67,6 @@ export class FacebookMessengerSDK {
       };
     }
 
-    const accessToken = this.pageAccessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: "Facebook page access token is missing",
-      };
-    }
-
     const { recipientId, message } = result.data;
 
     return {
