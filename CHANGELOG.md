@@ -1,5 +1,11 @@
 # noveltylab-platform-integrations
 
+## 1.1.3
+
+### Patch Changes
+
+- export only sdk
+
 ## 1.1.2
 
 ### Patch Changes
