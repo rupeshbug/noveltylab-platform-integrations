@@ -3,7 +3,7 @@ import { serve } from "@hono/node-server";
 import { facebookMessenger } from "./facebook";
 
 const app = new Hono();
-app.route("/", facebookMessenger);
+app.route("/facebook", facebookMessenger);
 
 serve(
   {

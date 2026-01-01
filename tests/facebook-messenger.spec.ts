@@ -57,5 +57,5 @@ test("validateSendFacebookMessage: returns success for valid payload", async () 
   const response = await fb.sendFacebookMessage(
     validSendFacebookMessagePayload
   );
-  expect(response.success).toBe(true);
+  expect(response.recipientId).toBeDefined();
 });
