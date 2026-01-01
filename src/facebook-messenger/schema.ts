@@ -110,3 +110,8 @@ export const FacebookAccessTokenSchema = z
   .string()
   .min(5, "Valid facebook access token is required")
   .regex(/^[A-Za-z0-9-_]+$/, "Invalid Facebook access token format");
+
+export const FacebookSendMessageSuccessSchema = z.object({
+  recipient_id: z.string(),
+  message_id: z.string(),
+});

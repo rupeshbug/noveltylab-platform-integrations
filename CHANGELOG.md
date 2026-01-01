@@ -1,5 +1,11 @@
 # noveltylab-platform-integrations
 
+## 1.1.2
+
+### Patch Changes
+
+- add reply to facebook message api
+
 ## 1.1.1
 
 ### Patch Changes

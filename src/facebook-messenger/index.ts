@@ -1,27 +1,15 @@
 import * as z from "zod";
 import {
   FacebookAccessTokenSchema,
+  FacebookSendMessageSuccessSchema,
   FacebookWebhookSchema,
   SendFacebookMessagePayload,
 } from "./schema";
+import { FACEBOOK_GRAPH_URL } from "./constants";
 
 interface FacebookSDKConfig {
   pageAccessToken?: string;
 }
-
-interface SendFacebookMessageSuccess {
-  success: true;
-  data: string;
-}
-
-interface SendFacebookMessageError {
-  success: false;
-  error: string;
-}
-
-type SendFacebookMessageResult =
-  | SendFacebookMessageSuccess
-  | SendFacebookMessageError;
 
 export class FacebookMessengerSDK {
   private readonly pageAccessToken?: string;
@@ -69,9 +57,7 @@ export class FacebookMessengerSDK {
   /**
    * Validate payload and send a Facebook message
    */
-  async sendFacebookMessage(
-    payload: unknown
-  ): Promise<SendFacebookMessageResult> {
+  async sendFacebookMessage(payload: unknown) {
     const result = await this.validateSendFacebookMessage(payload);
 
     if (!result.success) {
@@ -92,36 +78,47 @@ export class FacebookMessengerSDK {
 
     const { recipientId, message } = result.data;
 
-    // const url = `https://graph.facebook.com/v24.0/me/messages?access_token=${this.pageAccessToken}`;
-
-    // try {
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       recipient: { id: recipientId },
-    //       message: { text: message },
-    //     }),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (!response.ok) {
-    //     throw new Error(`Error ${response.status}: ${JSON.stringify(data)}`);
-    //   }
-
-    //   console.log("Message sent:", data);
-    //   return data; // contains message_id, recipient_id, etc.
-    // } catch (error) {
-    //   console.error("Failed to send message:", error);
-    //   return null;
-    // }
-
     return {
-      success: true,
-      data: "message sent successfully",
+      recipientId,
+      message,
     };
+  }
+
+  async validateSendFacebookMessageSuccess(payload: unknown) {
+    return FacebookSendMessageSuccessSchema.safeParseAsync(payload);
+  }
+
+  async replyToFacebookMessage(recipientId: string, message: string) {
+    const url = `${FACEBOOK_GRAPH_URL}/me/messages?access_token=${this.pageAccessToken}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipient: { id: recipientId },
+          message: { text: message },
+        }),
+      });
+
+      // response from Facebook Graph API for the message we sent
+      const data = await response.json();
+      const validatedResponse = await this.validateSendFacebookMessageSuccess(
+        data
+      );
+
+      if (validatedResponse.error) {
+        throw new Error(`Facebook response is not in expected shape`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${JSON.stringify(data)}`);
+      }
+      return validatedResponse;
+    } catch (error) {
+      throw new Error("Something unexepected occured");
+    }
   }
 }
