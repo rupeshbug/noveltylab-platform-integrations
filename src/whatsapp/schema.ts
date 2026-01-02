@@ -96,3 +96,12 @@ export const WhatsAppWebhookSchema = z.object({
  * Inferred TypeScript type
  */
 export type WhatsAppWebhookPayload = z.infer<typeof WhatsAppWebhookSchema>;
+
+export const SendWhatsAppMessagePayload = z.object({
+  to: z.string().min(5, "Recipient WhatsApp ID is required"),
+  message: z.string().min(1, "Message text is required"),
+});
+
+export type SendWhatsAppMessagePayload = z.infer<
+  typeof SendWhatsAppMessagePayload
+>;

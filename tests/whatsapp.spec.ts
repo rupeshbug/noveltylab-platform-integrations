@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getWhatsAppMessage } from "../src/whatsapp";
+import { getWhatsAppMessage, sendWhatsAppMessage } from "../src/whatsapp";
 
 const invalidPayload = {
   hello: "world",
@@ -51,4 +51,18 @@ test("getWhatsAppMessage: fails for invalid payload", async () => {
 test("getWhatsAppMessage: succeeds for valid payload", async () => {
   const response = await getWhatsAppMessage(validWebhookPayload);
   expect(response.success).toBe(true);
+});
+
+test("sendWhatsAppMessage: fails for invalid payload", async () => {
+  const response = await sendWhatsAppMessage({ hello: "world" });
+  expect(response.success).toBe(false);
+});
+
+test("sendWhatsAppMessage: fails for invalid payload", async () => {
+  const response = await sendWhatsAppMessage({
+    to: "9779861976294",
+    message: "hello from business",
+  });
+  expect(response.success).toBe(true);
+  expect(response.to).toBeDefined();
 });
