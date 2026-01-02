@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getWhatsAppMessage } from "../src/whatsapp";
+import { getWhatsAppMessage, replyToWhatsAppMessage } from "../src/whatsapp";
 
 export const whatsapp = new Hono();
 
@@ -40,6 +40,8 @@ whatsapp.post("/webhook", async (c) => {
         console.log("📨 WhatsApp message received");
         console.log("From:", senderWaId);
         console.log("Text:", messageText);
+
+        await replyToWhatsAppMessage(senderWaId, "yes man");
       }
     }
   }

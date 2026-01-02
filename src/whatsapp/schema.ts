@@ -105,3 +105,12 @@ export const SendWhatsAppMessagePayload = z.object({
 export type SendWhatsAppMessagePayload = z.infer<
   typeof SendWhatsAppMessagePayload
 >;
+
+export const WhatsAppSendMessageSuccessSchema = z.object({
+  messaging_product: z.literal("whatsapp"),
+  messages: z.array(
+    z.object({
+      id: z.string(),
+    })
+  ),
+});
