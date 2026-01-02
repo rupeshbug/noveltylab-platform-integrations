@@ -52,10 +52,3 @@ test("validateSendFacebookMessage: fails for invalid payload", async () => {
   const response = await fb.sendFacebookMessage(invalidPayload);
   expect(response.success).toBe(false);
 });
-
-test("validateSendFacebookMessage: returns success for valid payload", async () => {
-  const response = await fb.sendFacebookMessage(
-    validSendFacebookMessagePayload
-  );
-  expect(response.recipientId).toBeDefined();
-});

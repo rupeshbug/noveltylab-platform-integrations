@@ -41,15 +41,22 @@ facebookMessenger.post("webhook", async (c) => {
     return c.text("Not a page event", 404);
   }
 
-  for (const entry of facebookPayload.data!.entry ?? []) {
-    for (const event of entry.messaging ?? []) {
-      const senderId = event.sender?.id;
-      const messageText = event.message?.text;
+  try {
+    for (const entry of facebookPayload.data!.entry ?? []) {
+      for (const event of entry.messaging ?? []) {
+        const senderId = event.sender?.id;
+        const messageText = event.message?.text;
 
-      if (!senderId || !messageText) continue;
+        if (!senderId || !messageText) continue;
 
-      await fb.replyToFacebookMessage(senderId, "hello testing");
+        await fb.sendFacebookMessage({
+          recipientId: senderId,
+          message: "hello testing",
+        });
+      }
     }
+  } catch (err) {
+    console.log("error ", err);
   }
 
   return c.text("EVENT_RECEIVED", 200);

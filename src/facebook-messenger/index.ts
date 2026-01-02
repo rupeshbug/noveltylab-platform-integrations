@@ -54,9 +54,10 @@ export class FacebookMessengerSDK {
     return SendFacebookMessagePayload.safeParseAsync(payload);
   }
 
-  /**
-   * Validate payload and send a Facebook message
-   */
+  async validateSendFacebookMessageSuccess(payload: unknown) {
+    return FacebookSendMessageSuccessSchema.safeParseAsync(payload);
+  }
+
   async sendFacebookMessage(payload: unknown) {
     const result = await this.validateSendFacebookMessage(payload);
 
@@ -66,20 +67,7 @@ export class FacebookMessengerSDK {
         error: z.prettifyError(result.error),
       };
     }
-
     const { recipientId, message } = result.data;
-
-    return {
-      recipientId,
-      message,
-    };
-  }
-
-  async validateSendFacebookMessageSuccess(payload: unknown) {
-    return FacebookSendMessageSuccessSchema.safeParseAsync(payload);
-  }
-
-  async replyToFacebookMessage(recipientId: string, message: string) {
     const url = `${FACEBOOK_GRAPH_URL}/me/messages?access_token=${this.pageAccessToken}`;
 
     try {
