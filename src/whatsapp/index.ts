@@ -1,77 +1,110 @@
 import { z } from "zod";
 import {
+  WhatsAppAccessTokenSchema,
+  WhatsAppPhoneNumberIdSchema,
+  WhatsAppWebhookSchema,
   SendWhatsAppMessagePayload,
   WhatsAppSendMessageSuccessSchema,
-  WhatsAppWebhookSchema,
 } from "./schema";
 import { FACEBOOK_GRAPH_URL } from "../facebook-messenger/constants";
 
-export const getWhatsAppMessage = async (payload: unknown) => {
-  const result = await WhatsAppWebhookSchema.safeParseAsync(payload);
+interface WhatsAppSDKConfig {
+  accessToken?: string;
+  phoneNumberId?: string;
+}
 
-  if (!result.success) {
+export class WhatsAppSDK {
+  private readonly accessToken?: string;
+  private readonly phoneNumberId?: string;
+
+  constructor(config: WhatsAppSDKConfig = {}) {
+    if (config.accessToken) {
+      const result = WhatsAppAccessTokenSchema.safeParse(config.accessToken);
+      if (!result.success) {
+        throw new Error(z.prettifyError(result.error));
+      }
+      this.accessToken = result.data;
+    }
+
+    if (config.phoneNumberId) {
+      const result = WhatsAppPhoneNumberIdSchema.safeParse(
+        config.phoneNumberId
+      );
+      if (!result.success) {
+        throw new Error(z.prettifyError(result.error));
+      }
+      this.phoneNumberId = result.data;
+    }
+  }
+
+  /**
+   * Validate and parse incoming WhatsApp webhook payload
+   */
+  async getWhatsAppMessage(payload: unknown) {
+    const result = await WhatsAppWebhookSchema.safeParseAsync(payload);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: z.prettifyError(result.error),
+      };
+    }
+
     return {
-      success: false,
-      error: z.prettifyError(result.error),
+      success: true,
+      data: result.data,
     };
   }
 
-  return {
-    success: true,
-    data: result.data,
-  };
-};
+  /**
+   * Validate send message payload only
+   */
+  async sendWhatsAppMessage(payload: unknown) {
+    const result = await SendWhatsAppMessagePayload.safeParseAsync(payload);
 
-export const sendWhatsAppMessage = async (payload: unknown) => {
-  const result = await SendWhatsAppMessagePayload.safeParseAsync(payload);
+    if (!result.success) {
+      return {
+        success: false,
+        error: z.prettifyError(result.error),
+      };
+    }
 
-  if (!result.success) {
     return {
-      success: false,
-      error: z.prettifyError(result.error),
+      success: true,
+      ...result.data,
     };
   }
 
-  console.log(result);
-  const { to, message } = result.data;
+  /**
+   * Send reply to WhatsApp user (real API call)
+   */
+  async replyToWhatsAppMessage(to: string, message: string) {
+    if (!this.phoneNumberId || !this.accessToken) {
+      throw new Error("WhatsApp credentials are missing");
+    }
 
-  return {
-    success: true,
-    to,
-    message,
-  };
-};
+    const url = `${FACEBOOK_GRAPH_URL}/${this.phoneNumberId}/messages`;
 
-export const replyToWhatsAppMessage = async (to: string, message: string) => {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: {
+        body: message,
+      },
+    };
 
-  if (!phoneNumberId || !accessToken) {
-    throw new Error("WhatsApp credentials are missing");
-  }
-
-  const url = `${FACEBOOK_GRAPH_URL}/${phoneNumberId}/messages`;
-
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: {
-      body: message,
-    },
-  };
-
-  try {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
+    console.log("this is the data", data);
 
     const validatedResponse = WhatsAppSendMessageSuccessSchema.safeParse(data);
 
@@ -86,7 +119,5 @@ export const replyToWhatsAppMessage = async (to: string, message: string) => {
     }
 
     return validatedResponse.data;
-  } catch (error) {
-    throw new Error("Failed to send WhatsApp message");
   }
-};
+}

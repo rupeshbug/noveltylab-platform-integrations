@@ -1,7 +1,12 @@
 import { Hono } from "hono";
-import { getWhatsAppMessage, replyToWhatsAppMessage } from "../src/whatsapp";
+import { WhatsAppSDK } from "../src/whatsapp";
 
 export const whatsapp = new Hono();
+
+const whatsappSDK = new WhatsAppSDK({
+  accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+});
 
 whatsapp.get("/webhook", (c) => {
   const token = c.req.query("hub.verify_token");
@@ -18,7 +23,7 @@ whatsapp.get("/webhook", (c) => {
 whatsapp.post("/webhook", async (c) => {
   const body = await c.req.json();
 
-  const whatsAppPayload = await getWhatsAppMessage(body);
+  const whatsAppPayload = await whatsappSDK.getWhatsAppMessage(body);
 
   if (!whatsAppPayload.success) {
     console.error("Invalid WhatsApp payload", whatsAppPayload.error);
@@ -41,7 +46,11 @@ whatsapp.post("/webhook", async (c) => {
         console.log("From:", senderWaId);
         console.log("Text:", messageText);
 
-        await replyToWhatsAppMessage(senderWaId, "yes man");
+        try {
+          await whatsappSDK.replyToWhatsAppMessage(senderWaId, "working!!");
+        } catch (err) {
+          console.error("Failed to reply to WhatsApp message", err);
+        }
       }
     }
   }

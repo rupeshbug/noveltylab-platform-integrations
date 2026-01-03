@@ -114,3 +114,11 @@ export const WhatsAppSendMessageSuccessSchema = z.object({
     })
   ),
 });
+
+export const WhatsAppAccessTokenSchema = z
+  .string()
+  .min(10, "Invalid WhatsApp access token");
+
+export const WhatsAppPhoneNumberIdSchema = z
+  .string()
+  .min(5, "Invalid WhatsApp phone number ID");
