@@ -18,11 +18,10 @@ A lightweight, type-safe **Runtime agnostic SDK** for interacting with **Faceboo
 - 🔐 Zod-based runtime validation
 - 🧪 Testable design with Vitest
 - 📦 Tree-shakeable & ESM/CJS friendly
-- 🧠 Clean OOP SDK interface (no magic globals)
 
 ---
 
 ## 📦 Installation
 
 ```bash
-npm install social-messaging-sdk
+npm i noveltylab-platform-integrations

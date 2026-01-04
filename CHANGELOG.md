@@ -1,5 +1,11 @@
 # noveltylab-platform-integrations
 
+## 1.1.4
+
+### Patch Changes
+
+- include necessary files only
+
 ## 1.1.3
 
 ### Patch Changes
