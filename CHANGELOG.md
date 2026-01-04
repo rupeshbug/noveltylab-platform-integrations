@@ -1,5 +1,11 @@
 # noveltylab-platform-integrations
 
+## 1.1.3
+
+### Patch Changes
+
+- add whatsapp integrate
+
 ## 1.1.2
 
 ### Patch Changes
