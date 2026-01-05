@@ -58,3 +58,80 @@ Both are mandatory for Messenger and WhatsApp.
 > Once verified, Messenger events will be delivered to the backend webhook endpoint.
 
 ---
+
+## WhatsApp Configuration
+
+Unlike Messenger, WhatsApp onboarding starts from **Meta Business Suite** and is later linked to a **Meta App** for API access and webhook configuration. WhatsApp **cannot work without a Meta App**, even though most setup happens in Business Suite.
+
+### 1. Create / Use Meta Business Account
+
+- Go to **Meta Business Suite**
+- Ensure a Business Account exists
+- Make sure you have **Admin** access
+
+### 2. Open WhatsApp Manager
+
+- Go to Meta Business Suite → All tools → WhatsApp Manager
+- On first access, Meta automatically:
+  - Creates a **WhatsApp Business Account (WABA)**
+  - Assigns a **temporary test phone number**
+
+> The test number is used for initial API testing.
+> A real phone number can be added later for production use.
+
+![WhatsApp Manager](./images/img6.png)
+
+### 3. Create System User
+
+- Settings → Users → System Users
+
+Steps:
+- Create a system user
+- Assign role: **Admin**
+- Assign assets:
+  - WhatsApp Account (WABA)
+- Grant permissions:
+  - `messaging`
+  - `management`
+
+![System User](./images/img7.png)
+
+### 4. Generate Access Token
+
+- From the System User → **Generate token**
+- Select the **Meta App**
+- Select permissions:
+  - `whatsapp_business_messaging`
+  - `whatsapp_business_management`
+
+### 5. Link WhatsApp to a Meta App (Required)
+
+Even though WhatsApp assets (WABA, test number, tokens) are managed in
+**Meta Business Suite**, a **Meta App is mandatory** for API and webhook integration.
+
+Steps:
+- Go to **Meta Developers**
+- Create a **Business** app (if not already created)
+- Add **WhatsApp** as a product
+- Select the **same Business Account**
+- Link the **WhatsApp Business Account (WABA)** to the app
+- The linked WhatsApp Business Account and test phone number will be visible in the API setup.
+- Add your personal phone number as a recipient for testing outbound messages.
+
+![WhatsApp API Setup](./images/img5.png)
+
+### 6. Webhook Configuration (Meta App)
+
+- In **Meta Developers**, open the app
+- Go to **Webhooks**
+- Subscribe to **WhatsApp** events
+- Set webhook URL: https://<ngrok-domain>/webhook/whatsapp
+- Verify using the backend verify token
+
+## Local Development (ngrok)
+
+Used to expose the local server publicly for Meta webhook verification.
+
+```bash
+ngrok http 3000
+```
