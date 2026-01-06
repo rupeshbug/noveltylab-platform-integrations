@@ -135,3 +135,14 @@ Used to expose the local server publicly for Meta webhook verification.
 ```bash
 ngrok http 3000
 ```
+
+## Instagram Integration
+
+### Instagram Access Tokens (Important)
+Instagram Messaging APIs do not use a standalone Instagram access token. All Instagram Direct Message (DM) interactions are routed through a connected Facebook Page. To send and receive Instagram messages, your Instagram Business or Creator account must be linked to a Facebook Page, and your app must use a Facebook Page Access Token for that Page.
+
+This Page Access Token must be generated with the required permissions (such as instagram_manage_messages, pages_utility_messaging, and instagram_basic) and is then used to call the Graph API endpoints (for example, POST /me/messages). In other words, Instagram messaging always flows through the Facebook Page layer, and using a Page Access Token linked to the Instagram Business account is the correct and expected approach—not a workaround or unnecessary complexity.
+
+The tokens shown under “Instagram” in Meta Developer Dashboard usually will NOT work for Instagram Messaging. For sending/receiving Instagram DMs, you must use a Facebook Page Access Token
+
+![Instagram Messaging Through Facebook Page](./images/instagram_fb_graph_api.png)

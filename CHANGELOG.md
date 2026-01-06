@@ -1,5 +1,11 @@
 # noveltylab-platform-integrations
 
+## 1.1.5
+
+### Patch Changes
+
+- instagram messenger integration
+
 ## 1.1.4
 
 ### Patch Changes
