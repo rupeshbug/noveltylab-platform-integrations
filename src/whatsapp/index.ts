@@ -28,7 +28,7 @@ export class WhatsAppSDK {
 
     if (config.phoneNumberId) {
       const result = WhatsAppPhoneNumberIdSchema.safeParse(
-        config.phoneNumberId
+        config.phoneNumberId,
       );
       if (!result.success) {
         throw new Error(z.prettifyError(result.error));
@@ -69,16 +69,25 @@ export class WhatsAppSDK {
       };
     }
 
+    const parsed = result.data;
     const url = `${FACEBOOK_GRAPH_URL}/${this.phoneNumberId}/messages`;
 
-    const sendPayload = {
-      messaging_product: "whatsapp",
-      to: result.data.to,
-      type: "text",
-      text: {
-        body: result.data.message,
-      },
-    };
+    let sendPayload;
+    if (parsed.type === "template") {
+      sendPayload = {
+        messaging_product: "whatsapp",
+        to: parsed.to,
+        type: "template",
+        template: parsed.template,
+      };
+    } else {
+      sendPayload = {
+        messaging_product: "whatsapp",
+        to: parsed.to,
+        type: "text",
+        text: { body: parsed.message },
+      };
+    }
 
     const response = await fetch(url, {
       method: "POST",
@@ -89,16 +98,19 @@ export class WhatsAppSDK {
       body: JSON.stringify(sendPayload),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `WhatsApp API error: ${response.status} - ${JSON.stringify(errorData)}`,
+      );
+    }
+
     const data = await response.json();
 
     const validatedResponse = WhatsAppSendMessageSuccessSchema.safeParse(data);
 
     if (!validatedResponse.success) {
       throw new Error("WhatsApp response is not in expected shape");
-    }
-
-    if (!response.ok) {
-      throw new Error(`Something went wrong`);
     }
 
     return validatedResponse.data;
