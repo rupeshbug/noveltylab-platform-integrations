@@ -95,14 +95,45 @@ export const WhatsAppWebhookSchema = z.object({
 /**
  * Inferred TypeScript type
  */
-export type WhatsAppWebhookPayload = z.infer<typeof WhatsAppWebhookSchema>;
+export type WhatsAppWebhookPayload = z.output<typeof WhatsAppWebhookSchema>;
 
-export const SendWhatsAppMessagePayload = z.object({
+/**
+ * Template schema for WhatsApp template messages
+ */
+const WhatsAppTemplateSchema = z.object({
+  name: z.string().min(1),
+  language: z.object({ code: z.string() }),
+  components: z.array(z.record(z.string(), z.any())).optional(),
+});
+
+/**
+ * Text message payload
+ */
+const SendTextPayload = z.object({
+  type: z.literal("text").optional().default("text"),
   to: z.string().min(5, "Recipient WhatsApp ID is required"),
   message: z.string().min(1, "Message text is required"),
 });
 
-export type SendWhatsAppMessagePayload = z.infer<
+/**
+ * Template message payload
+ */
+const SendTemplatePayload = z.object({
+  type: z.literal("template"),
+  to: z.string().min(5, "Recipient WhatsApp ID is required"),
+  template: WhatsAppTemplateSchema,
+});
+
+/**
+ * Union of text and template payloads
+ * Template goes first so Zod tries it before falling through to text
+ */
+export const SendWhatsAppMessagePayload = z.union([
+  SendTemplatePayload,
+  SendTextPayload,
+]);
+
+export type SendWhatsAppMessagePayload = z.output<
   typeof SendWhatsAppMessagePayload
 >;
 
@@ -111,7 +142,7 @@ export const WhatsAppSendMessageSuccessSchema = z.object({
   messages: z.array(
     z.object({
       id: z.string(),
-    })
+    }),
   ),
 });
 
