@@ -121,7 +121,7 @@ describe("WhatsAppSDK — getWhatsAppMessage", () => {
   });
 });
 
-describe("WhatsAppSDK — sendWhatsAppMessage (validation layer)", () => {
+describe("WhatsAppSDK — sendWhatsAppMessage text (validation layer)", () => {
   test("returns success: false for missing `to` field", async () => {
     const result = await whatsapp.sendWhatsAppMessage({ message: "hello" });
     expect(result.success).toBe(false);
@@ -143,5 +143,115 @@ describe("WhatsAppSDK — sendWhatsAppMessage (validation layer)", () => {
     // Will fail at network layer — should return structured error, not throw
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
+  });
+
+  test("existing text usage works without type field (backward compatible)", async () => {
+    // { to, message } without type still works — type defaults to "text"
+    const result = await whatsapp.sendWhatsAppMessage({ to: "9779861976294", message: "hello" });
+    // fails at network, not at validation
+    expect(result.error).not.toContain("Recipient WhatsApp ID");
+    expect(result.error).not.toContain("Message text");
+  });
+});
+
+describe("WhatsAppSDK — sendWhatsAppMessage template (validation layer)", () => {
+  const validOtpTemplate = {
+    type: "template",
+    to: "9779861976294",
+    template: {
+      name: "otp_code",
+      language: { code: "en_US" },
+      components: [
+        {
+          type: "body",
+          parameters: [{ type: "text", text: "482910" }],
+        },
+      ],
+    },
+  };
+
+  const validMarketingTemplate = {
+    type: "template",
+    to: "9779861976294",
+    template: {
+      name: "summer_sale",
+      language: { code: "en_US" },
+      components: [
+        {
+          type: "header",
+          parameters: [{ type: "text", text: "50% OFF" }],
+        },
+        {
+          type: "body",
+          parameters: [{ type: "text", text: "John" }],
+        },
+      ],
+    },
+  };
+
+  const validUtilityTemplate = {
+    type: "template",
+    to: "9779861976294",
+    template: {
+      name: "order_confirmed",
+      language: { code: "en_US" },
+      // components is optional — some templates have no variables
+    },
+  };
+
+  test("validates OTP template payload correctly", async () => {
+    const result = await whatsapp.sendWhatsAppMessage(validOtpTemplate);
+    // fails at network, not at validation — no token set
+    expect(result.success).toBe(false);
+    expect(result.error).not.toContain("Template name");
+    expect(result.error).not.toContain("Language code");
+  });
+
+  test("validates marketing template payload correctly", async () => {
+    const result = await whatsapp.sendWhatsAppMessage(validMarketingTemplate);
+    expect(result.success).toBe(false);
+    expect(result.error).not.toContain("Template name");
+  });
+
+  test("validates utility template without components", async () => {
+    const result = await whatsapp.sendWhatsAppMessage(validUtilityTemplate);
+    expect(result.success).toBe(false);
+    expect(result.error).not.toContain("Template name");
+  });
+
+  test("returns success: false for template missing `template` field", async () => {
+    const result = await whatsapp.sendWhatsAppMessage({ type: "template", to: "9779861976294" });
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  test("returns success: false for template with empty name", async () => {
+    const result = await whatsapp.sendWhatsAppMessage({
+      type: "template",
+      to: "9779861976294",
+      template: { name: "", language: { code: "en_US" } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("returns success: false for template missing language", async () => {
+    const result = await whatsapp.sendWhatsAppMessage({
+      type: "template",
+      to: "9779861976294",
+      template: { name: "otp_code" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("returns success: false when no token/phoneNumberId set (network will fail)", async () => {
+    const result = await whatsapp.sendWhatsAppMessage(validOtpTemplate);
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  test("does not throw — returns structured error even on network failure", async () => {
+    await expect(
+      whatsapp.sendWhatsAppMessage(validOtpTemplate)
+    ).resolves.toHaveProperty("success", false);
   });
 });

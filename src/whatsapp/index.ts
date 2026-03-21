@@ -57,7 +57,7 @@ export class WhatsAppSDK {
   }
 
   /**
-   * Send a text message to a WhatsApp user
+   * Send a text or template message to a WhatsApp user
    */
   async sendWhatsAppMessage(payload: unknown) {
     const result = await SendWhatsAppMessagePayload.safeParseAsync(payload);
@@ -69,16 +69,23 @@ export class WhatsAppSDK {
       };
     }
 
+    const parsed = result.data;
     const url = `${FACEBOOK_GRAPH_URL}/${this.phoneNumberId}/messages`;
 
-    const sendPayload = {
-      messaging_product: "whatsapp",
-      to: result.data.to,
-      type: "text",
-      text: {
-        body: result.data.message,
-      },
-    };
+    const sendPayload =
+      parsed.type === "template"
+        ? {
+            messaging_product: "whatsapp",
+            to: parsed.to,
+            type: "template" as const,
+            template: parsed.template,
+          }
+        : {
+            messaging_product: "whatsapp",
+            to: parsed.to,
+            type: "text" as const,
+            text: { body: parsed.message },
+          };
 
     try {
       const response = await fetch(url, {

@@ -98,12 +98,42 @@ export const WhatsAppWebhookSchema = z.object({
  */
 export type WhatsAppWebhookPayload = z.infer<typeof WhatsAppWebhookSchema>;
 
-export const SendWhatsAppMessagePayload = z.object({
+/**
+ * Template schema for WhatsApp template messages (OTP, marketing, utility, etc.)
+ */
+export const WhatsAppTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required"),
+  language: z.object({ code: z.string().min(1, "Language code is required") }),
+  components: z.array(z.record(z.string(), z.unknown())).optional(),
+});
+
+/**
+ * Text message send payload
+ */
+const SendTextPayload = z.object({
+  type: z.literal("text").optional().default("text"),
   to: z.string().min(5, "Recipient WhatsApp ID is required"),
   message: z.string().min(1, "Message text is required"),
 });
 
-export type SendWhatsAppMessagePayload = z.infer<
+/**
+ * Template message send payload
+ */
+const SendTemplatePayload = z.object({
+  type: z.literal("template"),
+  to: z.string().min(5, "Recipient WhatsApp ID is required"),
+  template: WhatsAppTemplateSchema,
+});
+
+/**
+ * Union of text and template — template is tried first by Zod
+ */
+export const SendWhatsAppMessagePayload = z.union([
+  SendTemplatePayload,
+  SendTextPayload,
+]);
+
+export type SendWhatsAppMessagePayload = z.output<
   typeof SendWhatsAppMessagePayload
 >;
 
