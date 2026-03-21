@@ -312,3 +312,35 @@ When type === "text" (or no type given) it builds:
 
 
 { messaging_product: "whatsapp", to, type: "text", text: { body: message } }
+
+### A peek into using the OTP feature
+
+const whatsapp = new WhatsAppSDK({
+  accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+});
+
+async function sendOTP(phoneNumber: string, otp: string) {
+  const result = await whatsapp.sendWhatsAppMessage({
+    type: "template",
+    to: phoneNumber,
+    template: {
+      name: "otp_code",           // must match exactly what's approved in Meta Business
+      language: { code: "en_US" },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: otp },  // fills the {{1}} variable in the template
+          ],
+        },
+      ],
+    },
+  });
+
+  if (!result.success) {
+    console.error("Failed to send OTP:", result.error);
+  }
+}
+
+The name: "otp_code" refers to a template the business owner must first create and get approved inside Meta Business Suite. Once approved, this code sends it. The SDK handles all the API mechanics — auth, endpoint, payload structure, error handling.
