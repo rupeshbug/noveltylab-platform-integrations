@@ -207,9 +207,7 @@ A regular text send is just `{ to, message }`. A template call requires a struct
 }
 ```
 
-This warrants its own method — `sendWhatsAppMessage` stays for free-form text, and a new `sendWhatsAppTemplate` would handle templates. **The existing usage stays completely untouched — nothing breaks.**
-
-**Best course of action:** keep this SDK as the stable core and add template support as the next planned feature. The SDK is currently in a clean state. Templates need their own Zod schemas for each component type (header, body, buttons, media) — rushing it risks breaking the clean design. Ship what's here, then add templates deliberately.
+**`sendWhatsAppMessage` now handles both.** Pass `{ to, message }` for plain text. Pass `{ type: "template", to, template: { ... } }` for a template. The existing text usage stays completely untouched — nothing breaks.
 
 ---
 
@@ -266,28 +264,25 @@ async function verifyOTP(phoneNumber: string, code: string) {
 
 The developer wrote **zero Meta API code** — no headers, no auth, no payload construction, no error parsing. The SDK handled all of it. They only wrote their business logic.
 
-### The new thing — WhatsApp template messages
+### WhatsApp template messages — before and after
 
 #### Before
 
-sendWhatsAppMessage only did one thing — send a plain text message:
+`sendWhatsAppMessage` only sent plain text:
 
-
+```ts
 // ONLY this was possible before
 await whatsapp.sendWhatsAppMessage({
   to: "9779861976294",
   message: "Hello, your order is confirmed.",
 });
-It always built this API payload internally:
-
-
-{ messaging_product: "whatsapp", to, type: "text", text: { body: message } }
+```
 
 #### Now
 
-sendWhatsAppMessage detects whether you're sending text or a template based on the type field, and builds the right API payload automatically:
+`sendWhatsAppMessage` detects the type and builds the correct API payload automatically:
 
-
+```ts
 // Text — still works exactly the same, nothing changed
 await whatsapp.sendWhatsAppMessage({
   to: "9779861976294",
@@ -299,22 +294,20 @@ await whatsapp.sendWhatsAppMessage({
   type: "template",
   to: "9779861976294",
   template: {
-    name: "otp_code",          // template name you created in Meta Business
+    name: "otp_code",           // template name created and approved in Meta Business Suite
     language: { code: "en_US" },
-    components: [...],         // the variables to fill in
+    components: [
+      { type: "body", parameters: [{ type: "text", text: "482910" }] },
+    ],
   },
 });
-Internally, when type === "template" it builds:
+```
 
+---
 
-{ messaging_product: "whatsapp", to, type: "template", template: { ... } }
-When type === "text" (or no type given) it builds:
+### OTP feature using template
 
-
-{ messaging_product: "whatsapp", to, type: "text", text: { body: message } }
-
-### A peek into using the OTP feature
-
+```ts
 const whatsapp = new WhatsAppSDK({
   accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
@@ -325,7 +318,7 @@ async function sendOTP(phoneNumber: string, otp: string) {
     type: "template",
     to: phoneNumber,
     template: {
-      name: "otp_code",           // must match exactly what's approved in Meta Business
+      name: "otp_code",           // must match exactly what's approved in Meta Business Suite
       language: { code: "en_US" },
       components: [
         {
@@ -342,5 +335,6 @@ async function sendOTP(phoneNumber: string, otp: string) {
     console.error("Failed to send OTP:", result.error);
   }
 }
+```
 
-The name: "otp_code" refers to a template the business owner must first create and get approved inside Meta Business Suite. Once approved, this code sends it. The SDK handles all the API mechanics — auth, endpoint, payload structure, error handling.
+> `name: "otp_code"` must match a template the business owner created and got approved inside **Meta Business Suite**. Once approved, this code sends it. The SDK handles auth, endpoint, payload structure, and error handling.
