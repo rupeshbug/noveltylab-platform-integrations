@@ -45,26 +45,26 @@ export class WhatsAppSDK {
 
     if (!result.success) {
       return {
-        success: false,
+        success: false as const,
         error: z.prettifyError(result.error),
       };
     }
 
     return {
-      success: true,
+      success: true as const,
       data: result.data,
     };
   }
 
   /**
-   * Send reply to WhatsApp user (real API call)
+   * Send a text message to a WhatsApp user
    */
   async sendWhatsAppMessage(payload: unknown) {
     const result = await SendWhatsAppMessagePayload.safeParseAsync(payload);
 
     if (!result.success) {
       return {
-        success: false,
+        success: false as const,
         error: z.prettifyError(result.error),
       };
     }
@@ -80,27 +80,43 @@ export class WhatsAppSDK {
       },
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(sendPayload),
-    });
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendPayload),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    const validatedResponse = WhatsAppSendMessageSuccessSchema.safeParse(data);
+      if (!response.ok) {
+        return {
+          success: false as const,
+          error: `Error ${response.status}: ${JSON.stringify(data)}`,
+        };
+      }
 
-    if (!validatedResponse.success) {
-      throw new Error("WhatsApp response is not in expected shape");
+      const validatedResponse = WhatsAppSendMessageSuccessSchema.safeParse(data);
+
+      if (!validatedResponse.success) {
+        return {
+          success: false as const,
+          error: "WhatsApp response is not in expected shape",
+        };
+      }
+
+      return {
+        success: true as const,
+        data: validatedResponse.data,
+      };
+    } catch (error) {
+      return {
+        success: false as const,
+        error: "Network error: failed to send WhatsApp message",
+      };
     }
-
-    if (!response.ok) {
-      throw new Error(`Something went wrong`);
-    }
-
-    return validatedResponse.data;
   }
 }

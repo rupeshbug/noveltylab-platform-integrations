@@ -47,3 +47,5 @@ export const SendInstagramMessageSchema = z.object({
     text: z.string().min(1),
   }),
 });
+
+export type InstagramWebhookPayload = z.infer<typeof InstagramWebhookSchema>;

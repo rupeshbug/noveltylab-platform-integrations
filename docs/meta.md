@@ -146,3 +146,122 @@ This Page Access Token must be generated with the required permissions (such as 
 The tokens shown under “Instagram” in Meta Developer Dashboard usually will NOT work for Instagram Messaging. For sending/receiving Instagram DMs, you must use a Facebook Page Access Token
 
 ![Instagram Messaging Through Facebook Page](./images/instagram_fb_graph_api.png)
+
+---
+
+
+
+## Notes
+
+### How the SDK works
+
+A user imports the package, passes their credentials once, and their app is connected to the Meta platform. That's it.
+
+```ts
+import { WhatsAppSDK, FacebookMessengerSDK, InstagramSDK } from "noveltylab-platform-integrations";
+
+const whatsapp = new WhatsAppSDK({
+  accessToken: "EAAxxxx",
+  phoneNumberId: "12345678",
+});
+
+// receive messages (in your webhook handler)
+const result = await whatsapp.getWhatsAppMessage(req.body);
+
+// send a message
+await whatsapp.sendWhatsAppMessage({ to: "9779861976294", message: "Hello!" });
+```
+
+Without the SDK, every developer connecting to WhatsApp has to:
+
+- Read Meta's API docs
+- Figure out the right API endpoints and versions
+- Write raw `fetch` calls with correct headers and auth
+- Manually parse and validate webhook payloads
+- Handle errors themselves
+- Repeat all of this for Messenger and Instagram
+
+**The SDK eliminates all of that.** The user just brings their credentials and their own business logic.
+
+---
+
+### On WhatsApp Templates (OTP, marketing, utility)
+
+Templates are a **fundamentally different** sending mechanism from free-form text.
+
+A regular text send is just `{ to, message }`. A template call requires a structured payload:
+
+```ts
+// what a template call to Meta's API actually needs
+{
+  messaging_product: "whatsapp",
+  to: "9779861976294",
+  type: "template",
+  template: {
+    name: "otp_code",
+    language: { code: "en_US" },
+    components: [
+      { type: "body", parameters: [{ type: "text", text: "482910" }] }
+    ]
+  }
+}
+```
+
+This warrants its own method — `sendWhatsAppMessage` stays for free-form text, and a new `sendWhatsAppTemplate` would handle templates. **The existing usage stays completely untouched — nothing breaks.**
+
+**Best course of action:** keep this SDK as the stable core and add template support as the next planned feature. The SDK is currently in a clean state. Templates need their own Zod schemas for each component type (header, body, buttons, media) — rushing it risks breaking the clean design. Ship what's here, then add templates deliberately.
+
+---
+
+### Concrete example — Building a WhatsApp OTP feature on top of the SDK
+
+A developer wants to send OTP codes to users during signup. Here's all they need to write:
+
+**1. Initialize**
+
+```ts
+import { WhatsAppSDK } from "noveltylab-platform-integrations";
+
+const whatsapp = new WhatsAppSDK({
+  accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+});
+```
+
+**2. Build the OTP logic**
+
+```ts
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendOTP(phoneNumber: string) {
+  const otp = generateOTP();
+
+  // store in Redis with 5-minute expiry
+  await redis.set(`otp:${phoneNumber}`, otp, "EX", 300);
+
+  // SDK handles the Meta API call
+  const result = await whatsapp.sendWhatsAppMessage({
+    to: phoneNumber,
+    message: `Your verification code is: ${otp}. Valid for 5 minutes.`,
+  });
+
+  if (!result.success) {
+    throw new Error(`Failed to send OTP: ${result.error}`);
+  }
+
+  return { sent: true };
+}
+```
+
+**3. Verify when the user submits the code**
+
+```ts
+async function verifyOTP(phoneNumber: string, code: string) {
+  const stored = await redis.get(`otp:${phoneNumber}`);
+  return stored === code;
+}
+```
+
+The developer wrote **zero Meta API code** — no headers, no auth, no payload construction, no error parsing. The SDK handled all of it. They only wrote their business logic.

@@ -52,7 +52,6 @@ instagram.post("/webhook", async (c) => {
         await insta.sendInstagramMessage({
           recipientId: senderId,
           text: "Hello back👋",
-          accessToken: process.env.INSTAGRAM_ACCESS_TOKEN!,
         });
       } catch (err) {
         console.error("Failed to reply to Instagram message", err);

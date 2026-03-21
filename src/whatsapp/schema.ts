@@ -23,7 +23,8 @@ const WhatsAppTextSchema = z.object({
 });
 
 /**
- * Incoming WhatsApp message (text only for now)
+ * Incoming WhatsApp message — type can be text, image, audio, video, document, etc.
+ * text field is optional since non-text messages won't have it.
  */
 const WhatsAppMessageSchema = z.object({
   from: z.string().describe("WhatsApp ID of the sender"),
@@ -34,9 +35,9 @@ const WhatsAppMessageSchema = z.object({
     .string()
     .describe("Unix timestamp (seconds) when message was sent"),
 
-  type: z.literal("text").describe("Type of message"),
+  type: z.string().describe("Type of message (text, image, audio, video, document, etc.)"),
 
-  text: WhatsAppTextSchema,
+  text: WhatsAppTextSchema.optional(),
 });
 
 /**

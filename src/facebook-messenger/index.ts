@@ -36,13 +36,13 @@ export class FacebookMessengerSDK {
 
     if (!result.success) {
       return {
-        success: false,
+        success: false as const,
         error: z.prettifyError(result.error),
       };
     }
 
     return {
-      success: true,
+      success: true as const,
       data: result.data,
     };
   }
@@ -63,10 +63,11 @@ export class FacebookMessengerSDK {
 
     if (!result.success) {
       return {
-        success: false,
+        success: false as const,
         error: z.prettifyError(result.error),
       };
     }
+
     const { recipientId, message } = result.data;
     const url = `${FACEBOOK_GRAPH_URL}/me/messages?access_token=${this.pageAccessToken}`;
 
@@ -82,22 +83,34 @@ export class FacebookMessengerSDK {
         }),
       });
 
-      // response from Facebook Graph API for the message we sent
       const data = await response.json();
-      const validatedResponse = await this.validateSendFacebookMessageSuccess(
-        data
-      );
-
-      if (validatedResponse.error) {
-        throw new Error(`Facebook response is not in expected shape`);
-      }
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${JSON.stringify(data)}`);
+        return {
+          success: false as const,
+          error: `Error ${response.status}: ${JSON.stringify(data)}`,
+        };
       }
-      return validatedResponse;
+
+      const validatedResponse =
+        await this.validateSendFacebookMessageSuccess(data);
+
+      if (!validatedResponse.success) {
+        return {
+          success: false as const,
+          error: "Facebook response is not in expected shape",
+        };
+      }
+
+      return {
+        success: true as const,
+        data: validatedResponse.data,
+      };
     } catch (error) {
-      throw new Error("Something unexepected occured");
+      return {
+        success: false as const,
+        error: "Network error: failed to send Facebook message",
+      };
     }
   }
 }
