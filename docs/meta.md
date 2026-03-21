@@ -265,3 +265,50 @@ async function verifyOTP(phoneNumber: string, code: string) {
 ```
 
 The developer wrote **zero Meta API code** — no headers, no auth, no payload construction, no error parsing. The SDK handled all of it. They only wrote their business logic.
+
+### The new thing — WhatsApp template messages
+
+#### Before
+
+sendWhatsAppMessage only did one thing — send a plain text message:
+
+
+// ONLY this was possible before
+await whatsapp.sendWhatsAppMessage({
+  to: "9779861976294",
+  message: "Hello, your order is confirmed.",
+});
+It always built this API payload internally:
+
+
+{ messaging_product: "whatsapp", to, type: "text", text: { body: message } }
+
+#### Now
+
+sendWhatsAppMessage detects whether you're sending text or a template based on the type field, and builds the right API payload automatically:
+
+
+// Text — still works exactly the same, nothing changed
+await whatsapp.sendWhatsAppMessage({
+  to: "9779861976294",
+  message: "Hello!",
+});
+
+// Template — new
+await whatsapp.sendWhatsAppMessage({
+  type: "template",
+  to: "9779861976294",
+  template: {
+    name: "otp_code",          // template name you created in Meta Business
+    language: { code: "en_US" },
+    components: [...],         // the variables to fill in
+  },
+});
+Internally, when type === "template" it builds:
+
+
+{ messaging_product: "whatsapp", to, type: "template", template: { ... } }
+When type === "text" (or no type given) it builds:
+
+
+{ messaging_product: "whatsapp", to, type: "text", text: { body: message } }
